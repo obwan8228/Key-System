@@ -12,7 +12,7 @@ local nameofthescript = "Velocity" --put your script name here. leave blank too 
 
 local whoisitmadeby = "Obi" -- put your name here
 
-local thenoteofthekey = "Join The Discord For The Key!" --note you add here. leave blank to not have a note.
+local thenoteofthekey = "Join The Discord For The Script" --note you add here. leave blank to not have a note.
 
 
 -- Instances:
@@ -96,7 +96,7 @@ TextButton.TextWrapped = true
 TextButton.MouseButton1Click:Connect(function()
 	if KeyTextbox.Text == key then
 		TextButton.Text = "Correct Key!"
-		task.wait(3)"loadstring(game:HttpGet("https://raw.githubusercontent.com/obwan8228/Velocity/refs/heads/main/VelocityKat"))() -- insert script on this line
+loadstring(game:HttpGet("https://raw.githubusercontent.com/obwan8228/Velocity/refs/heads/main/VelocityKat"))() -- insert script on this line
 		ScreenGui:Destroy()
 	else
 		TextButton.Text = "Wrong Key!"
