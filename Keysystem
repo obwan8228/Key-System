@@ -6037,45 +6037,24 @@ local Library do
         return BlankElement, Items
     end
 
-    Library.CreateSettingsPage = function(self, Window, Watermark, KeybindList)
-        
+        Library.CreateSettingsPage = function(self, Window, Watermark, KeybindList)
         local SettingsPage = Window:Page({Name = "Settings", SubPages = true}) do 
 
-            -- ==================== THEMING PAGE ====================
             local ThemingSubPage = SettingsPage:SubPage({Name = "Theming", Columns = 2}) do 
                 local ThemesSection = ThemingSubPage:Section({Name = "Themes", Side = 1}) do
-                    
-                    -- Accent colorpicker = LINEAR by default
-                    ThemesSection:Label("Accent"):Colorpicker({
-                        Name = "Accent",
-                        Flag = "AccentTheme",
-                        Default = Library.Theme.Accent,
-                        Pages = false,        -- ← This forces linear (Hue + Alpha only)
-                        Alpha = 0,
-                        Callback = function(Value)
-                            Library.Theme["Accent"] = Value
-                            Library:ChangeTheme("Accent", Value)
-                        end
-                    })
-
-                    -- Other theme colors (you can keep Pages = false or remove it)
                     for Index, Value in Library.Theme do 
-                        if Index ~= "Accent" then
-                            ThemesSection:Label(Index):Colorpicker({
-                                Name = Index,
-                                Flag = Index.."Theme",
-                                Default = Value,
-                                Pages = false,
-                                Callback = function(Value)
-                                    Library.Theme[Index] = Value
-                                    Library:ChangeTheme(Index, Value)
-                                end
-                            })
-                        end
+                        ThemesSection:Label(Index):Colorpicker({
+                            Name = Index,
+                            Flag = Index.."Theme",
+                            Default = Value,
+                            Callback = function(Value)
+                                Library.Theme[Index] = Value
+                                Library:ChangeTheme(Index, Value)
+                            end
+                        })
                     end
                 end
             end
-            -- ==================== END THEMING ====================
 
             local ConfigsSubPage = SettingsPage:SubPage({Name = "Configs", Columns = 2}) do 
                 local ConfigsSection = ConfigsSubPage:Section({Name = "Configs", Side = 1}) do
