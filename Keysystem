@@ -3097,7 +3097,7 @@ local Library do
                     Parent = AnimationsTabItems["PageContent"],
                     Name = "Animations",
                     Items = {"Rainbow", "Fade", "Fade alpha", "Linear"},
-                    Default = Linear,
+                    Default = nil,
                     Flag = Colorpicker.Flag.."Animation",
                     Multi = false,
                     Debounce = Colorpicker,
