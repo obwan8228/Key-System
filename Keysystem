@@ -81,7 +81,7 @@ local Library do
             Direction = Enum.EasingDirection.Out
         },
 
-        FadeSpeed = 0.2,
+        FadeSpeed = 0,
 
         Folders = {
             Directory = "scoot",
@@ -3097,7 +3097,7 @@ local Library do
                     Parent = AnimationsTabItems["PageContent"],
                     Name = "Animations",
                     Items = {"Rainbow", "Fade", "Fade alpha", "Linear"},
-                    Default = nil,
+                    Default = Linear,
                     Flag = Colorpicker.Flag.."Animation",
                     Multi = false,
                     Debounce = Colorpicker,
@@ -6177,7 +6177,7 @@ local Library do
                         Name = "Tween style",
                         Flag = "Tween style",
                         Items = { "Linear", "Quad", "Quart", "Back", "Bounce", "Circular", "Cubic", "Elastic", "Exponential", "Sine", "Quint" },
-                        Default = "Cubic",
+                        Default = "Linear",
                         Callback = function(Value)
                             Library.Tween.Style = Enum.EasingStyle[Value]
                         end
