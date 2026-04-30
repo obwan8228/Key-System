@@ -6624,7 +6624,7 @@ end)
                         Name = "Tween direction",
                         Flag = "Tween direction",
                         Items = { "In", "Out", "InOut" },
-                        Default = "Out",
+                        Default = "In",
                         Callback = function(Value)
                             Library.Tween.Direction = Enum.EasingDirection[Value]
                         end
