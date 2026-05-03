@@ -5699,39 +5699,138 @@ end)
             Items["PlayerUsername"]:TextBorder()
         end
 
-        local Dropdown, DropdownItems = Components:Dropdown({
-            Parent = Items["Playerlist"],
-            Name = "Status",
-            Flag = "PlayerlistStatus",
-            Items = { "Neutral", "Priority", "Friendly" },
-            Default = "Neutral",
-            Multi = false,
-            Callback = function(Value)
-                if Playerlist.Player then
-                    if Playerlist.Player == LocalPlayer then
-                        return
-                    end
+ -- === STATUS DROPDOWN ===
+local CurrentStatus = "Neutral"  -- Track current status
 
-                    if Value == "Neutral" then
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus:Tween(nil, {TextColor3 = Library.Theme["Text"]})
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus.Instance.Text = "Neutral"
-                    elseif Value == "Priority" then
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus:Tween(nil, {TextColor3 = FromRGB(235, 76, 48)})
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus.Instance.Text = "Priority"
-                    elseif Value == "Friendly" then
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus:Tween(nil, {TextColor3 = FromRGB(134, 235, 56)})
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus.Instance.Text = "Friendly"
-                    else
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus:Tween(nil, {TextColor3 = Library.Theme["Text"]})
-                        Playerlist.Players[Playerlist.Player.Name].PlayerStatus.Instance.Text = "Neutral"
-                    end
-                end
+local Dropdown, DropdownItems = Components:Dropdown({
+    Parent = Items["Playerlist"],
+    Name = "Status",
+    Flag = "PlayerlistStatus",
+    Items = { "Neutral", "Priority", "Friendly" },
+    Default = "Neutral",
+    Multi = false,
+    Callback = function(Value)
+        CurrentStatus = Value
+        
+        if Playerlist.Player and Playerlist.Player ~= LocalPlayer then
+            local color = Library.Theme["Text"]
+            if Value == "Priority" then
+                color = FromRGB(235, 76, 48)
+            elseif Value == "Friendly" then
+                color = FromRGB(134, 235, 56)
             end
-        })
+            Playerlist.Players[Playerlist.Player.Name].PlayerStatus:Tween(nil, {TextColor3 = color})
+            Playerlist.Players[Playerlist.Player.Name].PlayerStatus.Instance.Text = Value
+        end
+    end
+})
 
-        DropdownItems["Dropdown"].Instance.AnchorPoint = Vector2New(1, 1)
-        DropdownItems["Dropdown"].Instance.Position = UDim2New(1, -8, 1, -25)
-        DropdownItems["Dropdown"].Instance.Size = UDim2New(0, 200, 0, 40)
+DropdownItems["Dropdown"].Instance.AnchorPoint = Vector2.new(1, 1)
+DropdownItems["Dropdown"].Instance.Position = UDim2.new(1, -8, 1, -45)
+DropdownItems["Dropdown"].Instance.Size = UDim2.new(0, 200, 0, 40)
+
+-- === ACTION BUTTONS ===
+local ActionButtons, ActionItems = Components:Button({
+    Parent = Items["Playerlist"]
+})
+
+-- Spectate Toggle
+local Spectating = false
+local OriginalCameraSubject = nil
+
+ActionButtons:Add("Spectate", function()
+    if not Playerlist.Player or Playerlist.Player == LocalPlayer then 
+        Library:Notification("Error", "No valid player selected", 3)
+        return 
+    end
+    
+    Spectating = not Spectating
+    
+    if Spectating then
+        OriginalCameraSubject = workspace.CurrentCamera.CameraSubject
+        local char = Playerlist.Player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = char.Humanoid
+            Library:Notification("Spectate", "Now spectating " .. Playerlist.Player.Name, 4)
+        end
+    else
+        if OriginalCameraSubject then
+            workspace.CurrentCamera.CameraSubject = OriginalCameraSubject
+        elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+        Library:Notification("Spectate", "Stopped spectating", 3)
+    end
+end)
+
+-- Teleport
+ActionButtons:Add("Teleport", function()
+    if not Playerlist.Player or Playerlist.Player == LocalPlayer then 
+        Library:Notification("Error", "No valid player selected", 3)
+        return 
+    end
+    
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local target = Playerlist.Player.Character and Playerlist.Player.Character:FindFirstChild("HumanoidRootPart")
+    
+    if root and target then
+        root.CFrame = target.CFrame + Vector3.new(0, 4, 0)
+        Library:Notification("Teleport", "Teleported to " .. Playerlist.Player.Name, 4)
+    else
+        Library:Notification("Error", "Could not teleport", 3)
+    end
+end)
+
+-- Highlight Toggle (Status-based colors)
+local CurrentHighlight = nil
+
+ActionButtons:Add("Highlight", function()
+    if not Playerlist.Player or Playerlist.Player == LocalPlayer then 
+        Library:Notification("Error", "No valid player selected", 3)
+        return 
+    end
+    
+    local char = Playerlist.Player.Character
+    if not char then 
+        Library:Notification("Error", "Player has no character", 3)
+        return 
+    end
+    
+    if CurrentHighlight and CurrentHighlight.Parent then
+        CurrentHighlight:Destroy()
+        CurrentHighlight = nil
+        Library:Notification("Highlight", "Highlight removed from " .. Playerlist.Player.Name, 3)
+    else
+        -- Remove old highlights
+        for _, v in pairs(char:GetChildren()) do
+            if v:IsA("Highlight") then v:Destroy() end
+        end
+        
+        CurrentHighlight = Instance.new("Highlight")
+        CurrentHighlight.Name = "PlayerHighlight"
+        
+        -- Color based on status
+        if CurrentStatus == "Friendly" then
+            CurrentHighlight.FillColor = Color3.fromRGB(0, 255, 100)      -- Green
+        elseif CurrentStatus == "Priority" then
+            CurrentHighlight.FillColor = Color3.fromRGB(90, 108, 198)    -- Blue
+        else
+            CurrentHighlight.FillColor = Color3.fromRGB(160, 160, 160)   -- Grey (Neutral)
+        end
+        
+        CurrentHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        CurrentHighlight.FillTransparency = 0.5
+        CurrentHighlight.OutlineTransparency = 0
+        CurrentHighlight.Parent = char
+        
+        Library:Notification("Highlight", "Highlight applied to " .. Playerlist.Player.Name, 4)
+    end
+end)
+
+-- Final Positioning
+ActionItems["Button"].Instance.AnchorPoint = Vector2.new(0, 1)
+ActionItems["Button"].Instance.Position = UDim2.new(0, 8, 1, 15)
+ActionItems["Button"].Instance.Size = UDim2.new(1, -16, 0, 26)
 
         function Playerlist:Add(Player)
             local PlayerItems = { }
