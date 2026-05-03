@@ -5829,7 +5829,7 @@ end)
 
 -- Final Positioning
 ActionItems["Button"].Instance.AnchorPoint = Vector2.new(0, 1)
-ActionItems["Button"].Instance.Position = UDim2.new(0, 8, 1, 15)
+ActionItems["Button"].Instance.Position = UDim2.new(0, 8, 1, 40)
 ActionItems["Button"].Instance.Size = UDim2.new(1, -16, 0, 26)
 
         function Playerlist:Add(Player)
