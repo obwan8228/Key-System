@@ -5181,13 +5181,13 @@ local Window = {
     IsOpen = false,
 }
 
-        -- Center UI on Screen (Good for PC + Mobile)
+        -- ==================== CENTERED WINDOW ====================
         local Items = Components:Window({
             Parent = Library.Holder,
             Draggable = true,
             Resizeable = true,
-            AnchorPoint = Vector2New(0.5, 0.5),        -- Center anchor
-            Position = UDim2New(0.5, 0, 0.5, 0),      -- True center of screen
+            AnchorPoint = Vector2New(0.5, 0.5),
+            Position = UDim2New(0.5, 0, 0.5, 0),
             Size = Window.Size
         }) do
             Items["Side"] = Instances:Create("Frame", {
