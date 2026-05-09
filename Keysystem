@@ -3599,8 +3599,17 @@ end)
                     Items["ColorpickerWindow"].Instance.Visible = true
                     Items["ColorpickerWindow"].Instance.Parent = Library.Holder.Instance
                     
+                     -- Center on Screen
                     RenderStepped = RunService.RenderStepped:Connect(function()
-                        Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + Items["ColorpickerButton"].Instance.AbsoluteSize.Y + 5)
+                        local Camera = workspace.CurrentCamera
+                        local ScreenSize = Camera.ViewportSize
+                        
+                        local WindowSize = Items["ColorpickerWindow"].Instance.AbsoluteSize
+                        
+                        Items["ColorpickerWindow"].Instance.Position = UDim2New(
+                            0, (ScreenSize.X / 2) - (WindowSize.X / 2),
+                            0, (ScreenSize.Y / 2) - (WindowSize.Y / 2) - 20
+                        )
                     end)
 
                     if not Data.Debounce then
