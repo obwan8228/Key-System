@@ -5181,7 +5181,7 @@ local Window = {
     IsOpen = false,
 }
 
-m        -- Center UI on Screen (Good for PC + Mobile)
+        -- Center UI on Screen (Good for PC + Mobile)
         local Items = Components:Window({
             Parent = Library.Holder,
             Draggable = true,
