@@ -5155,16 +5155,22 @@ end)
     Library.Window = function(self, Data)
         Data = Data or { }
 
-        local Window = { 
-            Logo = Data.Logo or Data.logo or "",
-            FadeTime = Data.FadeTime or Data.fadetime or 0.4,
-            Size = Data.Size or Data.size or UDim2New(0, 751, 0, 539),
+local UserInputService = game:GetService("UserInputService")
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
-            Pages = { },
-            Items = { },
+local DefaultSize = IsMobile and 
+    UDim2New(0, 650, 0, 400) or      -- Mobile
+    UDim2New(0, 720, 0, 520)         -- PC
 
-            IsOpen = false,
-        }
+local Window = { 
+    Logo = Data.Logo or Data.logo or "",
+    FadeTime = Data.FadeTime or Data.fadetime or 0.4,
+    Size = Data.Size or Data.size or DefaultSize,
+
+    Pages = { },
+    Items = { },
+    IsOpen = false,
+}
 
         local Items = Components:Window({
             Parent = Library.Holder,
