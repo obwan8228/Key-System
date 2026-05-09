@@ -5181,12 +5181,13 @@ local Window = {
     IsOpen = false,
 }
 
+m        -- Center UI on Screen (Good for PC + Mobile)
         local Items = Components:Window({
             Parent = Library.Holder,
             Draggable = true,
             Resizeable = true,
-            AnchorPoint = Vector2New(0, 0),
-            Position = UDim2New(0, Camera.ViewportSize.X / 3.3, 0, Camera.ViewportSize.Y / 3.3),
+            AnchorPoint = Vector2New(0.5, 0.5),        -- Center anchor
+            Position = UDim2New(0.5, 0, 0.5, 0),      -- True center of screen
             Size = Window.Size
         }) do
             Items["Side"] = Instances:Create("Frame", {
@@ -5198,7 +5199,7 @@ local Window = {
                 BorderSizePixel = 2,
                 BackgroundColor3 = FromRGB(20, 24, 21)
             })  Items["Side"]:AddToTheme({BackgroundColor3 = "Inline", BorderColor3 = "Outline"})
-            
+
             Items["Side"]:Border("Border")
 
             Items["Window"].Instance.Visible = false
