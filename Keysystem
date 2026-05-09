@@ -5266,36 +5266,36 @@ local Window = {
                 PaddingLeft = UDimNew(0, 3)
             })
 
--- Make Pages Scrollable
-Items["Pages"] = Instances:Create("ScrollingFrame", {
-    Parent = Items["Side"].Instance,
-    Name = "\0",
-    BackgroundTransparency = 1,
-    Position = UDim2New(0, 0, 0, 100),
-    BorderColor3 = FromRGB(0, 0, 0),
-    Size = UDim2New(1, 0, 1, -135),
-    BorderSizePixel = 0,
-    ScrollBarThickness = 3,
-    ScrollBarImageColor3 = FromRGB(202, 243, 255),
-    CanvasSize = UDim2New(0, 0, 0, 0),
-    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-    BackgroundColor3 = FromRGB(255, 255, 255)
-})  Items["Pages"]:AddToTheme({ScrollBarImageColor3 = "Accent"})
+            -- Make Pages Scrollable + Hide overflow
+            Items["Pages"] = Instances:Create("ScrollingFrame", {
+                Parent = Items["Side"].Instance,
+                Name = "\0",
+                BackgroundTransparency = 1,
+                Position = UDim2New(0, 0, 0, 100),
+                Size = UDim2New(1, 0, 1, -135),
+                BorderSizePixel = 0,
+                ScrollBarThickness = 4,
+                ScrollBarImageColor3 = FromRGB(202, 243, 255),
+                AutomaticCanvasSize = Enum.AutomaticSize.Y,
+                CanvasSize = UDim2New(0, 0, 0, 0),
+                BackgroundColor3 = FromRGB(255, 255, 255),
+                ClipsDescendants = true          -- This hides anything that goes over the UI
+            })  Items["Pages"]:AddToTheme({ScrollBarImageColor3 = "Accent"})
 
-Instances:Create("UIListLayout", {
-    Parent = Items["Pages"].Instance,
-    Name = "\0",
-    Padding = UDimNew(0, 8),
-    SortOrder = Enum.SortOrder.LayoutOrder
-})
+            Instances:Create("UIListLayout", {
+                Parent = Items["Pages"].Instance,
+                Name = "\0",
+                Padding = UDimNew(0, 8),
+                SortOrder = Enum.SortOrder.LayoutOrder
+            })
 
-Instances:Create("UIPadding", {
-    Parent = Items["Pages"].Instance,
-    Name = "\0",
-    PaddingRight = UDimNew(0, 8),
-    PaddingLeft = UDimNew(0, 8),
-    PaddingBottom = UDimNew(0, 5)
-})
+            Instances:Create("UIPadding", {
+                Parent = Items["Pages"].Instance,
+                Name = "\0",
+                PaddingRight = UDimNew(0, 8),
+                PaddingLeft = UDimNew(0, 8),
+                PaddingBottom = UDimNew(0, 8)
+            })
 
             local Content, _ = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
 
