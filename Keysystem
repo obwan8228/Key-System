@@ -229,11 +229,11 @@ local Library do
             ["Page Background"] = FromRGB(25, 30, 26),
             ["Outline"] = FromRGB(23, 30, 26),
             ["Element"] = FromRGB(30, 36, 31),
-            ["Gradient"] = FromRGB(56, 61, 111),
+            ["Gradient"] = FromRGB(73, 97, 127),
             ["Text"] = FromRGB(235, 235, 235),
             ["Text Stroke"] = FromRGB(0, 0, 0),
             ["Placeholder Text"] = FromRGB(185, 185, 185),
-            ["Accent"] = FromRGB(47, 78, 124)
+            ["Accent"] = FromRGB(54, 85, 120)
         }
     }
 
