@@ -5168,7 +5168,7 @@ local UserInputService = game:GetService("UserInputService")
 local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 local DefaultSize = IsMobile and 
-    UDim2New(0, 600, 0, 400) or      -- Mobile
+    UDim2New(0, 600, 0, 380) or      -- Mobile
     UDim2New(0, 720, 0, 520)         -- PC
 
 local Window = { 
