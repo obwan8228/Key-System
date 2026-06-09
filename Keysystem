@@ -5240,28 +5240,37 @@ local Window = {
 
 local Viewport = workspace.CurrentCamera.ViewportSize
 
-local function GetSizePx(udim2)
-    return Vector2.new(
-        udim2.X.Scale * Viewport.X + udim2.X.Offset,
-        udim2.Y.Scale * Viewport.Y + udim2.Y.Offset
-    )
-end
-
-local WindowSize = GetSizePx(Window.Size)
-
-local StartX = math.floor((Viewport.X - WindowSize.X) / 2)
-local StartY = math.floor((Viewport.Y - WindowSize.Y) / 2)
-
 local Items = Components:Window({
     Parent = Library.Holder,
     Draggable = true,
     Resizeable = true,
 
     AnchorPoint = Vector2New(0, 0),
-    Position = UDim2FromOffset(StartX, StartY),
+
+    -- temporary position (we correct it after creation)
+    Position = UDim2FromOffset(0, 0),
 
     Size = Window.Size
-}) do
+})
+
+-- get real pixel size AFTER creation
+local function GetSizePx(frame)
+    return frame.AbsoluteSize
+end
+
+task.defer(function()
+    local windowFrame = Items["Window"].Instance
+
+    local size = GetSizePx(windowFrame)
+    local vp = workspace.CurrentCamera.ViewportSize
+
+    local startX = (vp.X - size.X) / 2
+    local startY = (vp.Y - size.Y) / 2
+
+    windowFrame.Position = UDim2FromOffset(startX, startY)
+end)
+
+do
     Items["Side"] = Instances:Create("Frame", {
         Parent = Items["Window"].Instance,
         Name = "\0",
@@ -5276,6 +5285,7 @@ local Items = Components:Window({
         BackgroundColor3 = "Inline",
         BorderColor3 = "Outline"
     })
+end
 
             Items["Side"]:Border("Border")
 
