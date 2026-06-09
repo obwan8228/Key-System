@@ -455,67 +455,61 @@ local Library do
             self = nil
         end
 
--- ==================== IMPROVED SMOOTH DRAG (PC + MOBILE) ====================
+-- ==================== RELIABLE MOBILE + PC DRAG ====================
 Instances.MakeDraggable = function(self)
-    if not self.Instance then 
-        return 
-    end
+    if not self.Instance then return end
 
     local Gui = self.Instance
     local Dragging = false
     local DragStart = nil
     local StartPosition = nil
-    local TargetPosition = Gui.Position
 
-    local Smoothness = 0.25
+    local Smoothness = 0.22
 
+    -- Input Began
     self:Connect("InputBegan", function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
+        if (Input.UserInputType == Enum.UserInputType.MouseButton1 or 
+            Input.UserInputType == Enum.UserInputType.Touch) then
+            
             Dragging = true
             DragStart = Input.Position
             StartPosition = Gui.Position
         end
     end)
 
+    -- Update position
     Library:Connect(UserInputService.InputChanged, function(Input)
         if not Dragging then return end
-
-        if Input.UserInputType == Enum.UserInputType.MouseMovement 
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
-            if not DragStart or not StartPosition then return end
-
-            local Delta = Input.Position - DragStart
-
-            TargetPosition = UDim2.new(
-                StartPosition.X.Scale,
-                StartPosition.X.Offset + Delta.X,
-                StartPosition.Y.Scale,
-                StartPosition.Y.Offset + Delta.Y
-            )
-
-            -- CLAMP TO SCREEN
-            local ScreenSize = Gui.Parent.AbsoluteSize
-            local GuiSize = Gui.AbsoluteSize
-
-            local MaxX = math.max(0, ScreenSize.X - GuiSize.X)
-            local MaxY = math.max(0, ScreenSize.Y - GuiSize.Y)
-
-            local ClampedX = math.clamp(TargetPosition.X.Offset, 0, MaxX)
-            local ClampedY = math.clamp(TargetPosition.Y.Offset, 0, MaxY)
-
-            TargetPosition = UDim2.new(0, ClampedX, 0, ClampedY)
+        if not (Input.UserInputType == Enum.UserInputType.MouseMovement or 
+                Input.UserInputType == Enum.UserInputType.Touch) then 
+            return 
         end
+
+        if not DragStart or not StartPosition then return end
+
+        local Delta = Input.Position - DragStart
+
+        local NewPos = UDim2.new(
+            StartPosition.X.Scale,
+            StartPosition.X.Offset + Delta.X,
+            StartPosition.Y.Scale,
+            StartPosition.Y.Offset + Delta.Y
+        )
+
+        -- Clamp to screen
+        local ScreenSize = Gui.Parent.AbsoluteSize
+        local GuiSize = Gui.AbsoluteSize
+
+        local MaxX = math.max(0, ScreenSize.X - GuiSize.X)
+        local MaxY = math.max(0, ScreenSize.Y - GuiSize.Y)
+
+        local ClampedX = math.clamp(NewPos.X.Offset, 0, MaxX)
+        local ClampedY = math.clamp(NewPos.Y.Offset, 0, MaxY)
+
+        Gui.Position = UDim2.new(0, ClampedX, 0, ClampedY)
     end)
 
-    Library:Connect(RunService.RenderStepped, function()
-        if Dragging and Gui then
-            Gui.Position = Gui.Position:Lerp(TargetPosition, Smoothness)
-        end
-    end)
-
+    -- End drag
     Library:Connect(UserInputService.InputEnded, function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 
         or Input.UserInputType == Enum.UserInputType.Touch then
