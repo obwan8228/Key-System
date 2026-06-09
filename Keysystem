@@ -5236,24 +5236,41 @@ local Window = {
     IsOpen = false,
 }
 
-        -- ==================== CENTERED WINDOW ====================
-        local Items = Components:Window({
-            Parent = Library.Holder,
-            Draggable = true,
-            Resizeable = true,
-            AnchorPoint = Vector2New(0.5, 0.5),
-            Position = UDim2New(0.5, 0, 0.5, 0),
-            Size = Window.Size
-        }) do
-            Items["Side"] = Instances:Create("Frame", {
-                Parent = Items["Window"].Instance,
-                Name = "\0",
-                Position = UDim2New(0, 12, 0, 12),
-                BorderColor3 = FromRGB(42, 49, 45),
-                Size = UDim2New(0, 200, 1, -24),
-                BorderSizePixel = 2,
-                BackgroundColor3 = FromRGB(20, 24, 21)
-            })  Items["Side"]:AddToTheme({BackgroundColor3 = "Inline", BorderColor3 = "Outline"})
+-- ==================== CENTERED WINDOW ====================
+
+local Viewport = workspace.CurrentCamera.ViewportSize
+
+local StartX = math.floor(
+    (Viewport.X - Window.Size.X.Offset) / 2
+)
+
+local StartY = math.floor(
+    (Viewport.Y - Window.Size.Y.Offset) / 2
+)
+
+local Items = Components:Window({
+    Parent = Library.Holder,
+    Draggable = true,
+    Resizeable = true,
+
+    -- Use offset positioning instead of scale positioning
+    AnchorPoint = Vector2New(0, 0),
+    Position = UDim2FromOffset(StartX, StartY),
+
+    Size = Window.Size
+}) do
+    Items["Side"] = Instances:Create("Frame", {
+        Parent = Items["Window"].Instance,
+        Name = "\0",
+        Position = UDim2New(0, 12, 0, 12),
+        BorderColor3 = FromRGB(42, 49, 45),
+        Size = UDim2New(0, 200, 1, -24),
+        BorderSizePixel = 2,
+        BackgroundColor3 = FromRGB(20, 24, 21)
+    })  Items["Side"]:AddToTheme({
+        BackgroundColor3 = "Inline",
+        BorderColor3 = "Outline"
+    })
 
             Items["Side"]:Border("Border")
 
