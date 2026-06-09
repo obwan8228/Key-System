@@ -454,7 +454,7 @@ local Library do
             self = nil
         end
 
--- ==================== SMOOTH DRAG (PC + MOBILE) ====================
+-- ==================== SMOOTH DRAG WITH CLAMPING ====================
 Instances.MakeDraggable = function(self)
     if not self.Instance then 
         return 
@@ -466,9 +466,8 @@ Instances.MakeDraggable = function(self)
     local StartPosition = nil
     local TargetPosition = Gui.Position
 
-    local Smoothness = 0.30 -- lower = smoother/slower, higher = snappier
+    local Smoothness = 0.25  -- lower = smoother/slower
 
-    -- Start drag
     self:Connect("InputBegan", function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 
         or Input.UserInputType == Enum.UserInputType.Touch then
@@ -479,7 +478,6 @@ Instances.MakeDraggable = function(self)
         end
     end)
 
-    -- Update target position
     Library:Connect(UserInputService.InputChanged, function(Input)
         if not Dragging then return end
 
@@ -496,21 +494,33 @@ Instances.MakeDraggable = function(self)
                 StartPosition.Y.Scale,
                 StartPosition.Y.Offset + Delta.Y
             )
+
+            -- === CLAMP TO SCREEN ===
+            local ScreenSize = Gui.Parent.AbsoluteSize
+            local GuiSize = Gui.AbsoluteSize
+
+            local MaxX = ScreenSize.X - GuiSize.X
+            local MaxY = ScreenSize.Y - GuiSize.Y
+
+            local ClampedX = math.clamp(TargetPosition.X.Offset, 0, MaxX)
+            local ClampedY = math.clamp(TargetPosition.Y.Offset, 0, MaxY)
+
+            TargetPosition = UDim2.new(
+                0, ClampedX,
+                0, ClampedY
+            )
         end
     end)
 
-    -- Smooth render loop
     Library:Connect(RunService.RenderStepped, function()
         if Dragging and Gui then
             Gui.Position = Gui.Position:Lerp(TargetPosition, Smoothness)
         end
     end)
 
-    -- Stop drag
     Library:Connect(UserInputService.InputEnded, function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 
         or Input.UserInputType == Enum.UserInputType.Touch then
-
             Dragging = false
         end
     end)
