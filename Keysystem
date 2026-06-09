@@ -5240,20 +5240,23 @@ local Window = {
 
 local Viewport = workspace.CurrentCamera.ViewportSize
 
-local StartX = math.floor(
-    (Viewport.X - Window.Size.X.Offset) / 2
-)
+local function GetSizePx(udim2)
+    return Vector2.new(
+        udim2.X.Scale * Viewport.X + udim2.X.Offset,
+        udim2.Y.Scale * Viewport.Y + udim2.Y.Offset
+    )
+end
 
-local StartY = math.floor(
-    (Viewport.Y - Window.Size.Y.Offset) / 2
-)
+local WindowSize = GetSizePx(Window.Size)
+
+local StartX = math.floor((Viewport.X - WindowSize.X) / 2)
+local StartY = math.floor((Viewport.Y - WindowSize.Y) / 2)
 
 local Items = Components:Window({
     Parent = Library.Holder,
     Draggable = true,
     Resizeable = true,
 
-    -- Use offset positioning instead of scale positioning
     AnchorPoint = Vector2New(0, 0),
     Position = UDim2FromOffset(StartX, StartY),
 
@@ -5267,10 +5270,13 @@ local Items = Components:Window({
         Size = UDim2New(0, 200, 1, -24),
         BorderSizePixel = 2,
         BackgroundColor3 = FromRGB(20, 24, 21)
-    })  Items["Side"]:AddToTheme({
+    })
+
+    Items["Side"]:AddToTheme({
         BackgroundColor3 = "Inline",
         BorderColor3 = "Outline"
     })
+end
 
             Items["Side"]:Border("Border")
 
@@ -5287,7 +5293,7 @@ Items["Logo"] = Instances:Create("ImageLabel", {
     Image = "rbxassetid://" .. Window.Logo,
     BackgroundTransparency = 1,
     Position = UDim2New(0.5, 0, 0, 12),
-    Size = UDim2New(0, 85, 0, 85),
+    Size = UDim2New(0, 75, 0, 75),
     BorderSizePixel = 0,
     BackgroundColor3 = FromRGB(255, 255, 255)
 })
