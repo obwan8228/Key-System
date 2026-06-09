@@ -455,16 +455,16 @@ local Library do
             self = nil
         end
 
--- ==================== RELIABLE MOBILE + PC DRAG ====================
 Instances.MakeDraggable = function(self)
     if not self.Instance then
         return
     end
 
     local Gui = self.Instance
+
     local Dragging = false
     local DragStart
-    local StartPosition
+    local StartAbsPos
 
     self:Connect("InputBegan", function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1
@@ -472,7 +472,15 @@ Instances.MakeDraggable = function(self)
 
             Dragging = true
             DragStart = Input.Position
-            StartPosition = Gui.Position
+
+            StartAbsPos = Gui.AbsolutePosition
+        end
+    end)
+
+    Library:Connect(UserInputService.InputEnded, function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1
+        or Input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = false
         end
     end)
 
@@ -491,33 +499,31 @@ Instances.MakeDraggable = function(self)
         local ScreenSize = workspace.CurrentCamera.ViewportSize
         local GuiSize = Gui.AbsoluteSize
 
-        local NewX = StartPosition.X.Offset + Delta.X
-        local NewY = StartPosition.Y.Offset + Delta.Y
+        local X = StartAbsPos.X + Delta.X
+        local Y = StartAbsPos.Y + Delta.Y
 
-        -- Prevent UI from leaving the screen
-        NewX = math.clamp(
-            NewX,
+        X = math.clamp(
+            X,
             0,
-            math.max(0, ScreenSize.X - GuiSize.X)
+            ScreenSize.X - GuiSize.X
         )
 
-        NewY = math.clamp(
-            NewY,
+        Y = math.clamp(
+            Y,
             0,
-            math.max(0, ScreenSize.Y - GuiSize.Y)
+            ScreenSize.Y - GuiSize.Y
         )
 
-        Gui.Position = UDim2.fromOffset(NewX, NewY)
-    end)
+        -- Convert back to AnchorPoint space
+        local AnchorX = Gui.AnchorPoint.X * GuiSize.X
+        local AnchorY = Gui.AnchorPoint.Y * GuiSize.Y
 
-    Library:Connect(UserInputService.InputEnded, function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1
-        or Input.UserInputType == Enum.UserInputType.Touch then
-
-            Dragging = false
-            DragStart = nil
-            StartPosition = nil
-        end
+        Gui.Position = UDim2.new(
+            0,
+            X + AnchorX,
+            0,
+            Y + AnchorY
+        )
     end)
 
     Gui.Active = true
