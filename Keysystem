@@ -41,6 +41,7 @@ local Library do
     local UDim2New = UDim2.new
     local UDimNew = UDim.new
     local Vector2New = Vector2.new
+    local UDim2FromOffset = UDim2.fromOffset
 
     local MathClamp = math.clamp
     local MathFloor = math.floor
@@ -536,63 +537,107 @@ end
             local Gui = self.Instance
 
             local Resizing = false 
-            local Start = UDim2New()
-            local Delta = UDim2New()
-            local ResizeMax = Gui.Parent.AbsoluteSize - Gui.AbsoluteSize
+            local CurrentSide = nil
 
-            local ResizeButton = Instances:Create("ImageButton", {
-				Parent = Gui,
-                Image = "rbxassetid://",
-				AnchorPoint = Vector2New(1, 1),
-				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(0, 6, 0, 6),
-				Position = UDim2New(1, -4, 1, -4),
-                Name = "\0",
-				BorderSizePixel = 0,
-				BackgroundTransparency = 1,
-                ZIndex = 5,
-				AutoButtonColor = false,
-                Visible = true,
-			})  ResizeButton:AddToTheme({ImageColor3 = "Accent"})
+            local StartMouse = nil 
+            local StartPosition = nil 
+            local StartSize = nil
+            
+            local EdgeThickness = 6  -- Slightly bigger hitbox for easier resizing
 
-            local InputChanged
+            local MakeEdge = function(Name, Position, Size)
+                local Button = Instances:Create("TextButton", {
+                    Name = "\0",
+                    Size = Size,
+                    Position = Position,
+                    BackgroundTransparency = 1,
+                    Text = "",
+                    BorderSizePixel = 0,
+                    AutoButtonColor = false,
+                    Parent = Gui,
+                    ZIndex = 99999,
+                })
+                return Button
+            end
 
-            ResizeButton:Connect("InputBegan", function(Input)
+            local Edges = {
+                {Button = MakeEdge("Left",   UDim2New(0, 0, 0, 0),          UDim2New(0, EdgeThickness, 1, 0)), Side = "L"},
+                {Button = MakeEdge("Right",  UDim2New(1, -EdgeThickness, 0, 0), UDim2New(0, EdgeThickness, 1, 0)), Side = "R"},
+                {Button = MakeEdge("Top",    UDim2New(0, 0, 0, 0),          UDim2New(1, 0, 0, EdgeThickness)), Side = "T"},
+                {Button = MakeEdge("Bottom", UDim2New(0, 0, 1, -EdgeThickness), UDim2New(1, 0, 0, EdgeThickness)), Side = "B"},
+            }
+
+            local BeginResizing = function(Side)
+                Resizing = true 
+                CurrentSide = Side 
+
+                StartMouse = UserInputService:GetMouseLocation()
+                StartPosition = Vector2New(Gui.Position.X.Offset, Gui.Position.Y.Offset)
+                StartSize = Vector2New(Gui.Size.X.Offset, Gui.Size.Y.Offset)
+            end
+
+            local EndResizing = function()
+                Resizing = false 
+                CurrentSide = nil
+            end
+
+            for _, Edge in ipairs(Edges) do 
+                Edge.Button:Connect("InputBegan", function(Input)
+                    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                        BeginResizing(Edge.Side)
+                    end
+                end)
+            end
+
+            Library:Connect(UserInputService.InputEnded, function(Input)
                 if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-
-                    Resizing = true
-
-                    Start = Gui.Size - UDim2New(0, Input.Position.X, 0, Input.Position.Y)
-
-                    if InputChanged then 
-                        return
-                    end
-
-                    InputChanged = Input.Changed:Connect(function()
-                        if Input.UserInputState == Enum.UserInputState.End then
-                            Resizing = false
-
-                            InputChanged:Disconnect()
-                            InputChanged = nil
-                        end
-                    end)
-                end
-            end)
-
-            Library:Connect(UserInputService.InputChanged, function(Input)
-                if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
                     if Resizing then
-                        ResizeMax = Maximum or Gui.Parent.AbsoluteSize - Gui.AbsoluteSize
-
-                        Delta = Start + UDim2New(0, Input.Position.X, 0, Input.Position.Y)
-                        Delta = UDim2New(0, math.clamp(Delta.X.Offset, Minimum.X, ResizeMax.X), 0, math.clamp(Delta.Y.Offset, Minimum.Y, ResizeMax.Y))
-
-                        Tween:Create(Gui, TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = Delta}, true)
+                        EndResizing()
                     end
                 end
             end)
 
-            return Resizing
+            Library:Connect(RunService.RenderStepped, function()
+                if not Resizing or not CurrentSide then 
+                    return 
+                end
+
+                local MouseLocation = UserInputService:GetMouseLocation()
+                local dx = MouseLocation.X - StartMouse.X
+                local dy = MouseLocation.Y - StartMouse.Y
+            
+                local x, y = StartPosition.X, StartPosition.Y
+                local w, h = StartSize.X, StartSize.Y
+
+                if CurrentSide == "L" then
+                    x = StartPosition.X + dx
+                    w = StartSize.X - dx
+                elseif CurrentSide == "R" then
+                    w = StartSize.X + dx
+                elseif CurrentSide == "T" then
+                    y = StartPosition.Y + dy
+                    h = StartSize.Y - dy
+                elseif CurrentSide == "B" then
+                    h = StartSize.Y + dy
+                end
+
+                -- Safe clamping
+                local ScreenSize = Gui.Parent.AbsoluteSize
+                local MaxW = ScreenSize.X - x
+                local MaxH = ScreenSize.Y - y
+
+                w = math.clamp(w, Minimum.X, MaxW)
+                h = math.clamp(h, Minimum.Y, MaxH)
+
+                if w < Minimum.X then w = Minimum.X end
+                if h < Minimum.Y then h = Minimum.Y end
+
+                self:Tween(TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), 
+                    {Position = UDim2FromOffset(x, y)})
+
+                self:Tween(TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), 
+                    {Size = UDim2FromOffset(w, h)})
+            end)
         end
 
         Instances.OnHover = function(self, Function)
