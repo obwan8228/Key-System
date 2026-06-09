@@ -41,7 +41,6 @@ local Library do
     local UDim2New = UDim2.new
     local UDimNew = UDim.new
     local Vector2New = Vector2.new
-    local UDim2FromOffset = UDim2.fromOffset
 
     local MathClamp = math.clamp
     local MathFloor = math.floor
@@ -455,75 +454,65 @@ local Library do
             self = nil
         end
 
+-- ==================== SMOOTH DRAG (PC + MOBILE) ====================
 Instances.MakeDraggable = function(self)
-    if not self.Instance then
-        return
+    if not self.Instance then 
+        return 
     end
 
     local Gui = self.Instance
-
     local Dragging = false
-    local DragStart
-    local StartAbsPos
+    local DragStart = nil
+    local StartPosition = nil
+    local TargetPosition = Gui.Position
 
+    local Smoothness = 0.30 -- lower = smoother/slower, higher = snappier
+
+    -- Start drag
     self:Connect("InputBegan", function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 
         or Input.UserInputType == Enum.UserInputType.Touch then
 
             Dragging = true
             DragStart = Input.Position
-
-            StartAbsPos = Gui.AbsolutePosition
+            StartPosition = Gui.Position
         end
     end)
 
-    Library:Connect(UserInputService.InputEnded, function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1
+    -- Update target position
+    Library:Connect(UserInputService.InputChanged, function(Input)
+        if not Dragging then return end
+
+        if Input.UserInputType == Enum.UserInputType.MouseMovement 
         or Input.UserInputType == Enum.UserInputType.Touch then
+
+            if not DragStart or not StartPosition then return end
+
+            local Delta = Input.Position - DragStart
+
+            TargetPosition = UDim2.new(
+                StartPosition.X.Scale,
+                StartPosition.X.Offset + Delta.X,
+                StartPosition.Y.Scale,
+                StartPosition.Y.Offset + Delta.Y
+            )
+        end
+    end)
+
+    -- Smooth render loop
+    Library:Connect(RunService.RenderStepped, function()
+        if Dragging and Gui then
+            Gui.Position = Gui.Position:Lerp(TargetPosition, Smoothness)
+        end
+    end)
+
+    -- Stop drag
+    Library:Connect(UserInputService.InputEnded, function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 
+        or Input.UserInputType == Enum.UserInputType.Touch then
+
             Dragging = false
         end
-    end)
-
-    Library:Connect(UserInputService.InputChanged, function(Input)
-        if not Dragging then
-            return
-        end
-
-        if Input.UserInputType ~= Enum.UserInputType.MouseMovement
-        and Input.UserInputType ~= Enum.UserInputType.Touch then
-            return
-        end
-
-        local Delta = Input.Position - DragStart
-
-        local ScreenSize = workspace.CurrentCamera.ViewportSize
-        local GuiSize = Gui.AbsoluteSize
-
-        local X = StartAbsPos.X + Delta.X
-        local Y = StartAbsPos.Y + Delta.Y
-
-        X = math.clamp(
-            X,
-            0,
-            ScreenSize.X - GuiSize.X
-        )
-
-        Y = math.clamp(
-            Y,
-            0,
-            ScreenSize.Y - GuiSize.Y
-        )
-
-        -- Convert back to AnchorPoint space
-        local AnchorX = Gui.AnchorPoint.X * GuiSize.X
-        local AnchorY = Gui.AnchorPoint.Y * GuiSize.Y
-
-        Gui.Position = UDim2.new(
-            0,
-            X + AnchorX,
-            0,
-            Y + AnchorY
-        )
     end)
 
     Gui.Active = true
@@ -537,107 +526,63 @@ end
             local Gui = self.Instance
 
             local Resizing = false 
-            local CurrentSide = nil
+            local Start = UDim2New()
+            local Delta = UDim2New()
+            local ResizeMax = Gui.Parent.AbsoluteSize - Gui.AbsoluteSize
 
-            local StartMouse = nil 
-            local StartPosition = nil 
-            local StartSize = nil
-            
-            local EdgeThickness = 6  -- Slightly bigger hitbox for easier resizing
+            local ResizeButton = Instances:Create("ImageButton", {
+				Parent = Gui,
+                Image = "rbxassetid://",
+				AnchorPoint = Vector2New(1, 1),
+				BorderColor3 = FromRGB(0, 0, 0),
+				Size = UDim2New(0, 6, 0, 6),
+				Position = UDim2New(1, -4, 1, -4),
+                Name = "\0",
+				BorderSizePixel = 0,
+				BackgroundTransparency = 1,
+                ZIndex = 5,
+				AutoButtonColor = false,
+                Visible = true,
+			})  ResizeButton:AddToTheme({ImageColor3 = "Accent"})
 
-            local MakeEdge = function(Name, Position, Size)
-                local Button = Instances:Create("TextButton", {
-                    Name = "\0",
-                    Size = Size,
-                    Position = Position,
-                    BackgroundTransparency = 1,
-                    Text = "",
-                    BorderSizePixel = 0,
-                    AutoButtonColor = false,
-                    Parent = Gui,
-                    ZIndex = 99999,
-                })
-                return Button
-            end
+            local InputChanged
 
-            local Edges = {
-                {Button = MakeEdge("Left",   UDim2New(0, 0, 0, 0),          UDim2New(0, EdgeThickness, 1, 0)), Side = "L"},
-                {Button = MakeEdge("Right",  UDim2New(1, -EdgeThickness, 0, 0), UDim2New(0, EdgeThickness, 1, 0)), Side = "R"},
-                {Button = MakeEdge("Top",    UDim2New(0, 0, 0, 0),          UDim2New(1, 0, 0, EdgeThickness)), Side = "T"},
-                {Button = MakeEdge("Bottom", UDim2New(0, 0, 1, -EdgeThickness), UDim2New(1, 0, 0, EdgeThickness)), Side = "B"},
-            }
-
-            local BeginResizing = function(Side)
-                Resizing = true 
-                CurrentSide = Side 
-
-                StartMouse = UserInputService:GetMouseLocation()
-                StartPosition = Vector2New(Gui.Position.X.Offset, Gui.Position.Y.Offset)
-                StartSize = Vector2New(Gui.Size.X.Offset, Gui.Size.Y.Offset)
-            end
-
-            local EndResizing = function()
-                Resizing = false 
-                CurrentSide = nil
-            end
-
-            for _, Edge in ipairs(Edges) do 
-                Edge.Button:Connect("InputBegan", function(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-                        BeginResizing(Edge.Side)
-                    end
-                end)
-            end
-
-            Library:Connect(UserInputService.InputEnded, function(Input)
+            ResizeButton:Connect("InputBegan", function(Input)
                 if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+
+                    Resizing = true
+
+                    Start = Gui.Size - UDim2New(0, Input.Position.X, 0, Input.Position.Y)
+
+                    if InputChanged then 
+                        return
+                    end
+
+                    InputChanged = Input.Changed:Connect(function()
+                        if Input.UserInputState == Enum.UserInputState.End then
+                            Resizing = false
+
+                            InputChanged:Disconnect()
+                            InputChanged = nil
+                        end
+                    end)
+                end
+            end)
+
+            Library:Connect(UserInputService.InputChanged, function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
                     if Resizing then
-                        EndResizing()
+                        ResizeMax = Maximum or Gui.Parent.AbsoluteSize - Gui.AbsoluteSize
+
+                        Delta = Start + UDim2New(0, Input.Position.X, 0, Input.Position.Y)
+                        Delta = UDim2New(0, math.clamp(Delta.X.Offset, Minimum.X, ResizeMax.X), 0, math.clamp(Delta.Y.Offset, Minimum.Y, ResizeMax.Y))
+
+                        Tween:Create(Gui, TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = Delta}, true)
                     end
                 end
             end)
 
-            Library:Connect(RunService.RenderStepped, function()
-                if not Resizing or not CurrentSide then 
-                    return 
-                end
-
-                local MouseLocation = UserInputService:GetMouseLocation()
-                local dx = MouseLocation.X - StartMouse.X
-                local dy = MouseLocation.Y - StartMouse.Y
-            
-                local x, y = StartPosition.X, StartPosition.Y
-                local w, h = StartSize.X, StartSize.Y
-
-                if CurrentSide == "L" then
-                    x = StartPosition.X + dx
-                    w = StartSize.X - dx
-                elseif CurrentSide == "R" then
-                    w = StartSize.X + dx
-                elseif CurrentSide == "T" then
-                    y = StartPosition.Y + dy
-                    h = StartSize.Y - dy
-                elseif CurrentSide == "B" then
-                    h = StartSize.Y + dy
-                end
-
-                -- Safe clamping
-                local ScreenSize = Gui.Parent.AbsoluteSize
-                local MaxW = ScreenSize.X - x
-                local MaxH = ScreenSize.Y - y
-
-                w = math.clamp(w, Minimum.X, MaxW)
-                h = math.clamp(h, Minimum.Y, MaxH)
-
-                if w < Minimum.X then w = Minimum.X end
-                if h < Minimum.Y then h = Minimum.Y end
-
-                self:Tween(TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), 
-                    {Position = UDim2FromOffset(x, y)})
-
-                self:Tween(TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), 
-                    {Size = UDim2FromOffset(w, h)})
-            end)
+            return Resizing
         end
 
         Instances.OnHover = function(self, Function)
@@ -5223,7 +5168,7 @@ local UserInputService = game:GetService("UserInputService")
 local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
 local DefaultSize = IsMobile and 
-    UDim2New(0, 560, 0, 360) or      -- Mobile
+    UDim2New(0, 600, 0, 380) or      -- Mobile
     UDim2New(0, 720, 0, 520)         -- PC
 
 local Window = { 
@@ -5236,41 +5181,24 @@ local Window = {
     IsOpen = false,
 }
 
--- ==================== CENTERED WINDOW ====================
-
-local Viewport = workspace.CurrentCamera.ViewportSize
-
-local StartX = math.floor(
-    (Viewport.X - Window.Size.X.Offset) / 2
-)
-
-local StartY = math.floor(
-    (Viewport.Y - Window.Size.Y.Offset) / 2
-)
-
-local Items = Components:Window({
-    Parent = Library.Holder,
-    Draggable = true,
-    Resizeable = true,
-
-    -- Use offset positioning instead of scale positioning
-    AnchorPoint = Vector2New(0, 0),
-    Position = UDim2FromOffset(StartX, StartY),
-
-    Size = Window.Size
-}) do
-    Items["Side"] = Instances:Create("Frame", {
-        Parent = Items["Window"].Instance,
-        Name = "\0",
-        Position = UDim2New(0, 12, 0, 12),
-        BorderColor3 = FromRGB(42, 49, 45),
-        Size = UDim2New(0, 200, 1, -24),
-        BorderSizePixel = 2,
-        BackgroundColor3 = FromRGB(20, 24, 21)
-    })  Items["Side"]:AddToTheme({
-        BackgroundColor3 = "Inline",
-        BorderColor3 = "Outline"
-    })
+        -- ==================== CENTERED WINDOW ====================
+        local Items = Components:Window({
+            Parent = Library.Holder,
+            Draggable = true,
+            Resizeable = true,
+            AnchorPoint = Vector2New(0.5, 0.5),
+            Position = UDim2New(0.5, 0, 0.5, 0),
+            Size = Window.Size
+        }) do
+            Items["Side"] = Instances:Create("Frame", {
+                Parent = Items["Window"].Instance,
+                Name = "\0",
+                Position = UDim2New(0, 12, 0, 12),
+                BorderColor3 = FromRGB(42, 49, 45),
+                Size = UDim2New(0, 200, 1, -24),
+                BorderSizePixel = 2,
+                BackgroundColor3 = FromRGB(20, 24, 21)
+            })  Items["Side"]:AddToTheme({BackgroundColor3 = "Inline", BorderColor3 = "Outline"})
 
             Items["Side"]:Border("Border")
 
@@ -5287,7 +5215,7 @@ Items["Logo"] = Instances:Create("ImageLabel", {
     Image = "rbxassetid://" .. Window.Logo,
     BackgroundTransparency = 1,
     Position = UDim2New(0.5, 0, 0, 12),
-    Size = UDim2New(0, 75, 0, 75),
+    Size = UDim2New(0, 85, 0, 85),
     BorderSizePixel = 0,
     BackgroundColor3 = FromRGB(255, 255, 255)
 })
