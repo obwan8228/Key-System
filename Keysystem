@@ -5276,7 +5276,6 @@ local Items = Components:Window({
         BackgroundColor3 = "Inline",
         BorderColor3 = "Outline"
     })
-end
 
             Items["Side"]:Border("Border")
 
