@@ -1126,6 +1126,23 @@ end
                 end
 
                 Items["UIStroke"] = Items["Window"]:Border("Outline")
+
+                -- ====================== SHADOW / GLOW ======================
+                Items["Shadow"] = Instances:Create("ImageLabel", {
+                    Name = "\0",
+                    Parent = Items["Window"].Instance,
+                    Image = "http://www.roblox.com/asset/?id=18245826428",
+                    ImageColor3 = Color3.fromRGB(0, 0, 0),
+                    ScaleType = Enum.ScaleType.Slice,
+                    ImageTransparency = 0.45,
+                    Size = UDim2.new(1, 30, 1, 30),
+                    ZIndex = -1,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                    BackgroundTransparency = 1,
+                    SliceCenter = Rect.new(21, 21, 79, 79)
+                })
+                -- ============================================================
             end
 
             return Items
