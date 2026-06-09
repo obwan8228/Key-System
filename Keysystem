@@ -455,7 +455,7 @@ local Library do
             self = nil
         end
 
--- ==================== SMOOTH DRAG WITH CLAMPING ====================
+-- ==================== IMPROVED SMOOTH DRAG (PC + MOBILE) ====================
 Instances.MakeDraggable = function(self)
     if not self.Instance then 
         return 
@@ -467,7 +467,7 @@ Instances.MakeDraggable = function(self)
     local StartPosition = nil
     local TargetPosition = Gui.Position
 
-    local Smoothness = 0.25  -- lower = smoother/slower
+    local Smoothness = 0.25
 
     self:Connect("InputBegan", function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 
@@ -496,20 +496,17 @@ Instances.MakeDraggable = function(self)
                 StartPosition.Y.Offset + Delta.Y
             )
 
-            -- === CLAMP TO SCREEN ===
+            -- CLAMP TO SCREEN
             local ScreenSize = Gui.Parent.AbsoluteSize
             local GuiSize = Gui.AbsoluteSize
 
-            local MaxX = ScreenSize.X - GuiSize.X
-            local MaxY = ScreenSize.Y - GuiSize.Y
+            local MaxX = math.max(0, ScreenSize.X - GuiSize.X)
+            local MaxY = math.max(0, ScreenSize.Y - GuiSize.Y)
 
             local ClampedX = math.clamp(TargetPosition.X.Offset, 0, MaxX)
             local ClampedY = math.clamp(TargetPosition.Y.Offset, 0, MaxY)
 
-            TargetPosition = UDim2.new(
-                0, ClampedX,
-                0, ClampedY
-            )
+            TargetPosition = UDim2.new(0, ClampedX, 0, ClampedY)
         end
     end)
 
@@ -523,6 +520,8 @@ Instances.MakeDraggable = function(self)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 
         or Input.UserInputType == Enum.UserInputType.Touch then
             Dragging = false
+            DragStart = nil
+            StartPosition = nil
         end
     end)
 
