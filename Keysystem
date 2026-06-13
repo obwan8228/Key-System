@@ -22,7 +22,7 @@ local Library do
     local TweenService = game:GetService("TweenService")
 
     gethui = gethui or function()
-        return CoreGui
+        return Players and Players.LocalPlayer and Players.LocalPlayer:WaitForChild("PlayerGui") or CoreGui
     end
 
     local LocalPlayer = Players.LocalPlayer
