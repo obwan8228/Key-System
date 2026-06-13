@@ -1000,6 +1000,8 @@ end
             return false
         end
 
+        Library._BatchSaving = true
+
         print("[LoadConfig] Successfully decoded", #Decoded, "flags")
 
         local LoadedCount = 0
@@ -1037,6 +1039,8 @@ end
         Library:Notification("Info", "Loaded " .. LoadedCount .. " settings", 5)
         print("[LoadConfig] Finished - Loaded", LoadedCount, "settings total")
 
+        Library._BatchSaving = false
+
         return true
     end
 
@@ -1044,6 +1048,51 @@ end
         if isfile(Library.Folders.Configs .. "/" .. Config) then 
             delfile(Library.Folders.Configs .. "/" .. Config)
         end
+    end
+
+    Library.AutoSave = function(self)
+        local FilePath = self.Folders.Configs .. "/autosave.json"
+        local ConfigData = self:GetConfig()
+        local Success, Err = pcall(function()
+            writefile(FilePath, ConfigData)
+        end)
+        if not Success then
+            warn("[AutoSave] Failed:", Err)
+        end
+    end
+
+    Library.AutoLoad = function(self)
+        local FilePath = self.Folders.Configs .. "/autosave.json"
+        if isfile(FilePath) then
+            local Content = readfile(FilePath)
+            self:LoadConfig(Content)
+        end
+    end
+
+    Library.SaveAutoSettings = function(self)
+        local data = {
+            AutoSave = Library.Flags and Library.Flags.AutoSave or false,
+            AutoLoad = Library.Flags and Library.Flags.AutoLoad or false
+        }
+        local Success, Err = pcall(function()
+            writefile(self.Folders.Configs .. "/autosettings.json", HttpService:JSONEncode(data))
+        end)
+        if not Success then
+            warn("[SaveAutoSettings] Failed:", Err)
+        end
+    end
+
+    Library.LoadAutoSettings = function(self)
+        local path = self.Folders.Configs .. "/autosettings.json"
+        if isfile(path) then
+            local Success, data = pcall(function()
+                return HttpService:JSONDecode(readfile(path))
+            end)
+            if Success and type(data) == "table" then
+                return data
+            end
+        end
+        return {}
     end
 
     Library.RefreshConfigsList = function(self, Element)
@@ -6614,9 +6663,48 @@ ActionItems["Button"].Instance.Size = UDim2.new(1, -16, 0, 26)
                         end
                     })
 
+                    local AutoSaveToggle = ConfigsSection:Toggle({
+                        Name = "Auto Save",
+                        Flag = "AutoSave",
+                        Default = false,
+                        Callback = function(v)
+                            Library.AutoSaveEnabled = v
+                            Library:SaveAutoSettings()
+                        end
+                    })
+
+                    local AutoLoadToggle = ConfigsSection:Toggle({
+                        Name = "Auto Load",
+                        Flag = "AutoLoad",
+                        Default = false,
+                        Callback = function(v)
+                            if v then
+                                Library:AutoLoad()
+                            end
+                            Library:SaveAutoSettings()
+                        end
+                    })
+
+                    -- Hook into Library.Flags for auto-save on any flag change
+                    if not Library._RealFlags then
+                        Library._RealFlags = Library.Flags
+                        Library.Flags = setmetatable({}, {
+                            __index = Library._RealFlags,
+                            __newindex = function(t, k, v)
+                                Library._RealFlags[k] = v
+                                if Library._AutoSaveReady and Library.AutoSaveEnabled and not Library._BatchSaving then
+                                    Library:AutoSave()
+                                end
+                            end,
+                            __pairs = function()
+                                return pairs(Library._RealFlags)
+                            end
+                        })
+                    end
+
                     local ActionButtons = ConfigsSection:Button()
 
-                    ActionButtons:Add("Create / Save", function()
+                    ActionButtons:Add("Save", function()
                         if not ConfigName or ConfigName == "" then
                             Library:Notification("Error", "Please enter a config name!", 4)
                             return
@@ -6647,10 +6735,8 @@ ActionItems["Button"].Instance.Size = UDim2.new(1, -16, 0, 26)
                             return
                         end
 
-                        -- Fixed: Don't add the folder again if SelectedConfig already has the path
                         local FilePath = SelectedConfig
 
-                        -- If SelectedConfig doesn't have the full path, add it
                         if not SelectedConfig:find("scoot/Configs") then
                             FilePath = Library.Folders.Configs .. "/" .. SelectedConfig
                         end
@@ -6679,7 +6765,6 @@ ActionItems["Button"].Instance.Size = UDim2.new(1, -16, 0, 26)
                             return
                         end
 
-                        -- Fix path handling
                         local FilePath = SelectedConfig
                         if not SelectedConfig:find("scoot/Configs") then
                             FilePath = Library.Folders.Configs .. "/" .. SelectedConfig
@@ -6707,7 +6792,22 @@ ActionItems["Button"].Instance.Size = UDim2.new(1, -16, 0, 26)
                         end
                     end)
 
+                    ActionButtons:Add("Refresh", function()
+                        Library:RefreshConfigsList(ConfigsSearchbox)
+                        Library:Notification("Success", "Refreshed configs list!", 3)
+                    end)
+
                     Library:RefreshConfigsList(ConfigsSearchbox)
+
+                    -- Restore auto-save/load toggle states from previous session
+                    local autoSettings = Library:LoadAutoSettings()
+                    if autoSettings.AutoSave then
+                        AutoSaveToggle:Set(true)
+                    end
+                    if autoSettings.AutoLoad then
+                        AutoLoadToggle:Set(true)
+                        Library:AutoLoad()
+                    end
                 end
             end
 
@@ -6791,6 +6891,8 @@ ActionItems["Button"].Instance.Size = UDim2.new(1, -16, 0, 26)
                 end
             end
         end
+
+        Library._AutoSaveReady = true
         
         return SettingsPage
     end
