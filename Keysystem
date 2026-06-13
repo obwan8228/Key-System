@@ -28,6 +28,7 @@ local Library do
     local LocalPlayer = Players.LocalPlayer
     local Camera = Workspace.CurrentCamera
     local Mouse = LocalPlayer:GetMouse()
+    local originalMouseBehavior = UserInputService.MouseBehavior
 
     local FromRGB = Color3.fromRGB
     local FromHSV = Color3.fromHSV
@@ -851,6 +852,7 @@ end
         Library = nil 
         getgenv().Library = nil
 
+        UserInputService.MouseBehavior = originalMouseBehavior
         UserInputService.MouseIconEnabled = true
     end
 
@@ -5477,8 +5479,10 @@ Items["Logo"] = Instances:Create("ImageLabel", {
                 if Window.IsOpen then
                     Items["MouseBackground"].Instance.Visible = true
                     UserInputService.MouseIconEnabled = false
+                    UserInputService.MouseBehavior = Enum.MouseBehavior.Default
                 else
                     Items["MouseBackground"].Instance.Visible = false
+                    UserInputService.MouseBehavior = originalMouseBehavior
                     UserInputService.MouseIconEnabled = true
                 end
             end)
